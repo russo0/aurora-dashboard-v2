@@ -59,8 +59,14 @@
     </h1>
     <div class="metric" id="bzText">Bz: carregando...</div>
     <div class="metric" id="speedText">Vento Solar: carregando...</div>
-    <div class="metric" id="kpText">Índice Kp: carregando...</div>
+    <div class="metric" id="kpText">Índice Kp: carregando...
+    <div class="metric" id="bzGraphContainer">
+      <canvas id="bzChart" style="width:100%;max-width:500px;background:#fff;padding:10px;border-radius:8px;"></canvas>
+    </div>
+    <button onclick="fetchLiveData()">Atualizar Agora</button>
+    </div>
   </div>
+
 
   <script>
     let lang = 'pt';
@@ -113,5 +119,82 @@
 
     renderLang();
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let bzChart = null;
+
+    function plotBz(dataArray) {
+      const labels = dataArray.map(row => row[0].slice(11, 16));  // HH:MM
+      const values = dataArray.map(row => parseFloat(row[6]));
+
+      if (bzChart) {
+        bzChart.data.labels = labels;
+        bzChart.data.datasets[0].data = values;
+        bzChart.update();
+      } else {
+        const ctx = document.getElementById('bzChart').getContext('2d');
+        bzChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Bz (nT)',
+              data: values,
+              borderWidth: 2,
+              borderColor: '#00ffcc',
+              backgroundColor: 'rgba(0,255,204,0.1)',
+              tension: 0.3,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            scales: {
+              x: { display: true },
+              y: { beginAtZero: false }
+            }
+          }
+        });
+      }
+    }
+
+    async function fetchLiveData() {
+      console.log("[DEBUG] Iniciando fetch de dados...");
+      try {
+        const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
+        console.log("[DEBUG] Bz URL:", magUrl);
+        const magRes = await fetch(magUrl);
+        const magData = await magRes.json();
+        const bz = parseFloat(magData[magData.length - 1][6]);
+
+        const bzLast6h = magData.slice(-72); // 72 x 5min = 6h
+        plotBz(bzLast6h);
+
+        const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
+        console.log("[DEBUG] Plasma URL:", plasmaUrl);
+        const plasmaRes = await fetch(plasmaUrl);
+        const plasmaData = await plasmaRes.json();
+        const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
+
+        const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
+        console.log("[DEBUG] Kp URL:", kpUrl);
+        const kpRes = await fetch(kpUrl);
+        const kpData = await kpRes.json();
+        const kp = parseFloat(kpData[kpData.length - 1][1]);
+
+        document.getElementById('bzText').textContent = (lang === 'pt' ? 'Bz: ' : 'Bz: ') + bz.toFixed(1) + ' nT';
+        document.getElementById('speedText').textContent = (lang === 'pt' ? 'Vento Solar: ' : 'Solar Wind: ') + Math.round(speed) + ' km/s';
+        document.getElementById('kpText').textContent = (lang === 'pt' ? 'Índice Kp: ' : 'Kp Index: ') + kp;
+
+      } catch (e) {
+        console.error("[ERRO] Falha ao carregar dados:", e);
+        document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+        document.getElementById('bzText').classList.add('error');
+        document.getElementById('speedText').textContent = '';
+        document.getElementById('kpText').textContent = '';
+      }
+    }
+  </script>
 </body>
+
 </html>
