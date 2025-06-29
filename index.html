@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aurora Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
@@ -19,15 +19,10 @@
       max-width: 700px;
       margin: auto;
       padding: 2rem;
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.85);
       border-radius: 12px;
       margin-top: 3rem;
       box-shadow: 0 0 10px #00ffcc;
-    }
-    h1 {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
     button {
       padding: 0.5rem 1rem;
@@ -36,11 +31,7 @@
       border-radius: 5px;
       color: #000;
       cursor: pointer;
-      transition: 0.3s;
       margin-top: 1rem;
-    }
-    button:hover {
-      background: #00ddb3;
     }
     .metric {
       margin: 1rem 0;
@@ -51,7 +42,6 @@
       background: #000;
       border-radius: 10px;
       padding: 1rem;
-      display: block;
     }
     #statusMessage {
       margin-top: 1rem;
@@ -62,9 +52,9 @@
 </head>
 <body>
   <div class="container">
-    <h1>
-      <span id="title">Aurora Monitor</span>
-      <button id="langToggle" onclick="toggleLang()">EN / PT</button>
+    <h1 style="display:flex;justify-content:space-between;">
+      <span id="title">Monitor de Aurora</span>
+      <button onclick="toggleLang()">EN / PT</button>
     </h1>
     <div class="metric" id="bzText">Bz: carregando...</div>
     <div class="metric" id="speedText">Vento Solar: carregando...</div>
@@ -83,27 +73,62 @@
     let bzChart = null;
     let latestData = { bz: 0, speed: 0, kp: 0 };
 
+    const translations = {
+      pt: {
+        title: "Monitor de Aurora",
+        bz: "Bz",
+        speed: "Vento Solar",
+        kp: "Índice Kp",
+        update: "Atualizar Agora",
+        alert: "🌌 Alerta: Subtempestade possível!",
+        normal: "Condições normais no momento.",
+        error: "Erro ao carregar dados."
+      },
+      en: {
+        title: "Aurora Monitor",
+        bz: "Bz",
+        speed: "Solar Wind",
+        kp: "Kp Index",
+        update: "Update Now",
+        alert: "🌌 Alert: Possible substorm!",
+        normal: "Normal conditions at the moment.",
+        error: "Error fetching data."
+      }
+    };
+
     function toggleLang() {
       lang = lang === 'pt' ? 'en' : 'pt';
-      document.getElementById('langToggle').innerText = lang.toUpperCase();
       renderLang();
     }
 
     function renderLang() {
-      document.getElementById('title').innerText = lang === 'pt' ? 'Monitor de Aurora' : 'Aurora Monitor';
-      updateStatusMessage();
+      const t = translations[lang];
+      document.getElementById("title").innerText = t.title;
+      document.querySelector("button").innerText = lang.toUpperCase() + " / " + (lang === "pt" ? "EN" : "PT");
+      document.querySelector("button + .metric + .metric + .metric + .metric + button").innerText = t.update;
+
+      // Atualiza os textos atuais com os dados já carregados
+      updateDisplayText();
     }
 
     function updateStatusMessage() {
-      const statusEl = document.getElementById('statusMessage');
       const { bz, speed, kp } = latestData;
+      const t = translations[lang];
+      const statusEl = document.getElementById("statusMessage");
       if (bz < -2 && speed > 400 && kp >= 4) {
-        statusEl.textContent = lang === 'pt' ? '🌌 Alerta: Subtempestade possível!' : '🌌 Alert: Possible substorm!';
+        statusEl.textContent = t.alert;
         statusEl.style.color = '#ffcc00';
       } else {
-        statusEl.textContent = lang === 'pt' ? 'Condições normais no momento.' : 'Normal conditions at the moment.';
+        statusEl.textContent = t.normal;
         statusEl.style.color = '#00ffcc';
       }
+    }
+
+    function updateDisplayText() {
+      const t = translations[lang];
+      document.getElementById('bzText').textContent = `${t.bz}: ${latestData.bz.toFixed(1)} nT`;
+      document.getElementById('speedText').textContent = `${t.speed}: ${Math.round(latestData.speed)} km/s`;
+      document.getElementById('kpText').textContent = `${t.kp}: ${latestData.kp}`;
     }
 
     function plotBz(dataArray) {
@@ -119,23 +144,31 @@
         bzChart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: labels,
+            labels,
             datasets: [{
               label: 'Bz (nT)',
               data: values,
+              borderColor: '#00ff00',
+              backgroundColor: 'rgba(0, 255, 0, 0.1)',
               borderWidth: 2,
-              borderColor: '#00ffcc',
-              backgroundColor: 'rgba(0,255,204,0.1)',
               tension: 0.3,
               pointRadius: 0
             }]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
             scales: {
-              x: { display: true, ticks: { color: '#ccc' } },
-              y: { beginAtZero: false, ticks: { color: '#ccc' } }
+              y: {
+                suggestedMin: -10,
+                suggestedMax: 10,
+                grid: {
+                  color: '#333',
+                  borderDash: [4]
+                }
+              },
+              x: {
+                ticks: { color: '#ccc' },
+                grid: { color: '#222' }
+              }
             },
             plugins: {
               legend: { labels: { color: '#ccc' } }
@@ -147,33 +180,29 @@
 
     async function fetchLiveData() {
       try {
-        const magRes = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json');
-        const magData = await magRes.json();
+        const mag = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json');
+        const magData = await mag.json();
         const bz = parseFloat(magData[magData.length - 1][6]);
         const bzLast6h = magData.slice(-72);
         plotBz(bzLast6h);
 
-        const plasmaRes = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json');
-        const plasmaData = await plasmaRes.json();
+        const plasma = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json');
+        const plasmaData = await plasma.json();
         const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
-        const kpRes = await fetch(base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json');
-        const kpData = await kpRes.json();
-        const kp = parseFloat(kpData[kpData.length - 1][1]);
+        const kp = await fetch(base + 'https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
+        const kpData = await kp.json();
+        const kpValue = parseFloat(kpData[kpData.length - 1][1]) || "-";
 
-        latestData = { bz, speed, kp };
-
-        document.getElementById('bzText').textContent = (lang === 'pt' ? 'Bz: ' : 'Bz: ') + bz.toFixed(1) + ' nT';
-        document.getElementById('speedText').textContent = (lang === 'pt' ? 'Vento Solar: ' : 'Solar Wind: ') + Math.round(speed) + ' km/s';
-        document.getElementById('kpText').textContent = (lang === 'pt' ? 'Índice Kp: ' : 'Kp Index: ') + kp;
+        latestData = { bz, speed, kp: kpValue };
+        updateDisplayText();
         updateStatusMessage();
-
       } catch (e) {
-        console.error("[ERRO] Falha ao carregar dados:", e);
-        document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+        console.error("[ERRO]", e);
+        document.getElementById('bzText').textContent = translations[lang].error;
         document.getElementById('speedText').textContent = '';
         document.getElementById('kpText').textContent = '';
-        document.getElementById('statusMessage').textContent = lang === 'pt' ? 'Erro ao atualizar.' : 'Error updating.';
+        document.getElementById('statusMessage').textContent = translations[lang].error;
       }
     }
 
