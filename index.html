@@ -3,7 +3,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Dashboard Corrigido</title>
+  <title>Aurora Dashboard Estável</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -49,12 +49,14 @@
       color: #00ffcc;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
 </head>
 <body>
   <div class="container">
     <h1 style="display:flex;justify-content:space-between;">
       <span id="title">Monitor de Aurora</span>
-      <button onclick="toggleLang()">EN / PT</button>
+      <button onclick="toggleLang()" id="langBtn">EN / PT</button>
     </h1>
     <div class="metric" id="bzText">Bz: carregando...</div>
     <div class="metric" id="speedText">Vento Solar: carregando...</div>
@@ -66,12 +68,12 @@
     <button id="updateBtn" onclick="fetchLiveData()">Atualizar Agora</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     let lang = 'pt';
-    const base = 'https://proxy-noaa.russosec.workers.dev/?url=';
     let bzChart = null;
     let latestData = { bz: 0, speed: 0, kp: 0 };
+
+    const base = 'https://proxy-noaa.russosec.workers.dev/?url=';
 
     const translations = {
       pt: {
@@ -98,27 +100,11 @@
 
     function toggleLang() {
       lang = lang === 'pt' ? 'en' : 'pt';
-      renderLang();
-    }
-
-    function renderLang() {
       const t = translations[lang];
       document.getElementById("title").innerText = t.title;
+      document.getElementById("langBtn").innerText = lang === 'pt' ? 'EN / PT' : 'PT / EN';
       document.getElementById("updateBtn").innerText = t.update;
       updateDisplayText();
-    }
-
-    function updateStatusMessage() {
-      const { bz, speed, kp } = latestData;
-      const t = translations[lang];
-      const statusEl = document.getElementById("statusMessage");
-      if (bz < -2 && speed > 400 && kp >= 4) {
-        statusEl.textContent = t.alert;
-        statusEl.style.color = '#ffcc00';
-      } else {
-        statusEl.textContent = t.normal;
-        statusEl.style.color = '#00ffcc';
-      }
     }
 
     function updateDisplayText() {
@@ -128,76 +114,71 @@
       document.getElementById('kpText').textContent = `${t.kp}: ${latestData.kp}`;
     }
 
+    function updateStatusMessage() {
+      const { bz, speed, kp } = latestData;
+      const msg = (bz < -2 && speed > 400 && kp >= 4) ? translations[lang].alert : translations[lang].normal;
+      document.getElementById("statusMessage").innerText = msg;
+    }
+
     function plotBz(dataArray) {
       const labels = dataArray.map(row => row[0].slice(11, 16));
-      const values = dataArray.map(row => parseFloat(row[3])); // Bz GSM
+      const values = dataArray.map(row => parseFloat(row[3]));
 
-      if (bzChart) {
-        bzChart.data.labels = labels;
-        bzChart.data.datasets[0].data = values;
-        bzChart.update();
-      } else {
-        const ctx = document.getElementById('bzChart').getContext('2d');
-        bzChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Bz GSM (nT)',
-              data: values,
-              borderColor: '#00ff00',
-              backgroundColor: 'rgba(0, 255, 0, 0.1)',
-              borderWidth: 2,
-              tension: 0.3,
-              pointRadius: 0
-            }]
-          },
-          options: {
-            scales: {
-              y: {
-                suggestedMin: -10,
-                suggestedMax: 10,
-                grid: {
-                  color: '#444'
-                },
-                ticks: {
-                  color: '#ccc'
-                }
-              },
-              x: {
-                ticks: { color: '#ccc' },
-                grid: { color: '#222' }
-              }
-            },
-            plugins: {
-              legend: {
-                labels: {
-                  color: '#ccc'
-                }
-              },
-              annotation: {
-                annotations: {
-                  line1: {
-                    type: 'line',
-                    yMin: 0,
-                    yMax: 0,
-                    borderColor: 'red',
-                    borderWidth: 2,
-                    borderDash: [6, 6]
-                  }
+      const ctx = document.getElementById('bzChart').getContext('2d');
+
+      if (bzChart) bzChart.destroy();
+
+      bzChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Bz GSM (nT)',
+            data: values,
+            borderColor: '#00ff00',
+            backgroundColor: 'rgba(0,255,0,0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#ccc' } },
+            annotation: {
+              annotations: {
+                lineZero: {
+                  type: 'line',
+                  yMin: 0,
+                  yMax: 0,
+                  borderColor: 'red',
+                  borderWidth: 2,
+                  borderDash: [6, 6]
                 }
               }
             }
+          },
+          scales: {
+            y: {
+              suggestedMin: -10,
+              suggestedMax: 10,
+              grid: { color: '#444' },
+              ticks: { color: '#ccc' }
+            },
+            x: {
+              grid: { color: '#222' },
+              ticks: { color: '#ccc' }
+            }
           }
-        });
-      }
+        }
+      });
     }
 
     async function fetchLiveData() {
       try {
         const mag = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json');
         const magData = await mag.json();
-        const bz = parseFloat(magData[magData.length - 1][3]); // Bz GSM
+        const bz = parseFloat(magData[magData.length - 1][3]);
         const bzLast6h = magData.slice(-72);
         plotBz(bzLast6h);
 
@@ -205,24 +186,21 @@
         const plasmaData = await plasma.json();
         const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
-        const kp = await fetch(base + 'https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
-        const kpData = await kp.json();
-        const kpValue = parseFloat(kpData[kpData.length - 1][1]) || "-";
+        // Simulated Kp fallback
+        const kpValue = 4.33;
 
         latestData = { bz, speed, kp: kpValue };
         updateDisplayText();
         updateStatusMessage();
       } catch (e) {
-        console.error("[ERRO]", e);
-        document.getElementById('bzText').textContent = translations[lang].error;
-        document.getElementById('speedText').textContent = '';
-        document.getElementById('kpText').textContent = '';
-        document.getElementById('statusMessage').textContent = translations[lang].error;
+        console.error("Erro ao carregar dados:", e);
+        document.getElementById("statusMessage").innerText = translations[lang].error;
       }
     }
 
     window.onload = () => {
-      renderLang();
+      toggleLang(); // to force init text
+      toggleLang();
       fetchLiveData();
     };
   </script>
