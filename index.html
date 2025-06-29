@@ -3,7 +3,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Dashboard Offline</title>
+  <title>Aurora Dashboard + AE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -16,13 +16,24 @@
       background-position: center;
     }
     .container {
-      max-width: 700px;
-      margin: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       padding: 2rem;
       background-color: rgba(0, 0, 0, 0.85);
+      margin: 2rem auto;
       border-radius: 12px;
-      margin-top: 3rem;
+      max-width: 1100px;
       box-shadow: 0 0 10px #00ffcc;
+    }
+    .column {
+      flex: 1;
+      min-width: 300px;
+      margin: 1rem;
+    }
+    h1 {
+      text-align: center;
+      width: 100%;
     }
     button {
       padding: 0.5rem 1rem;
@@ -37,16 +48,16 @@
       margin: 1rem 0;
       font-size: 1.2rem;
     }
-    #bzGraphContainer {
-      margin-top: 2rem;
-      background: #000;
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+      background-color: #000;
       border-radius: 10px;
-      padding: 1rem;
     }
     #statusMessage {
-      margin-top: 1rem;
       font-weight: bold;
       color: #00ffcc;
+      margin-top: 1rem;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -54,23 +65,31 @@
 </head>
 <body>
   <div class="container">
-    <h1 style="display:flex;justify-content:space-between;">
+    <h1>
       <span id="title">Monitor de Aurora</span>
+      &nbsp;&nbsp;
       <button onclick="toggleLang()" id="langBtn">EN / PT</button>
     </h1>
-    <div class="metric" id="bzText">Bz: carregando...</div>
-    <div class="metric" id="speedText">Vento Solar: carregando...</div>
-    <div class="metric" id="kpText">Índice Kp: carregando...</div>
-    <div class="metric" id="statusMessage">Status: aguardando atualização...</div>
-    <div id="bzGraphContainer">
-      <canvas id="bzChart" style="width:100%;max-width:600px;height:300px;"></canvas>
+
+    <div class="column">
+      <div class="metric" id="bzText">Bz: carregando...</div>
+      <div class="metric" id="speedText">Vento Solar: carregando...</div>
+      <div class="metric" id="kpText">Índice Kp: carregando...</div>
+      <div class="metric" id="statusMessage">Status: aguardando atualização...</div>
+      <canvas id="bzChart"></canvas>
+      <button id="updateBtn" onclick="renderData()">Atualizar Agora</button>
     </div>
-    <button id="updateBtn" onclick="renderData()">Atualizar Agora</button>
+
+    <div class="column">
+      <h3 style="text-align:center;">Índice AE (simulado)</h3>
+      <canvas id="aeChart"></canvas>
+    </div>
   </div>
 
   <script>
     let lang = 'pt';
     let bzChart = null;
+    let aeChart = null;
     let latestData = { bz: 0, speed: 0, kp: 0 };
 
     const translations = {
@@ -97,10 +116,11 @@
     };
 
     const simulatedData = {
-      bz: -3.7,
-      speed: 480,
-      kp: 5.3,
-      bzGraph: Array.from({ length: 72 }, (_, i) => [
+      bz: -3.5,
+      speed: 490,
+      kp: 5.0,
+      ae: Array.from({length: 72}, (_, i) => Math.round(300 + 150 * Math.sin(i / 6))),
+      bzGraph: Array.from({length: 72}, (_, i) => [
         `2025-06-28 ${String(18 + Math.floor(i / 6)).padStart(2, '0')}:${(i % 6) * 10}`,
         0, 0, (Math.sin(i / 10) * 5).toFixed(2)
       ])
@@ -131,11 +151,8 @@
     function plotBz(dataArray) {
       const labels = dataArray.map(row => row[0].slice(11, 16));
       const values = dataArray.map(row => parseFloat(row[3]));
-
       const ctx = document.getElementById('bzChart').getContext('2d');
-
       if (bzChart) bzChart.destroy();
-
       bzChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -152,10 +169,9 @@
         },
         options: {
           plugins: {
-            legend: { labels: { color: '#ccc' } },
             annotation: {
               annotations: {
-                lineZero: {
+                zeroLine: {
                   type: 'line',
                   yMin: 0,
                   yMax: 0,
@@ -170,6 +186,41 @@
             y: {
               suggestedMin: -10,
               suggestedMax: 10,
+              grid: { color: '#444' },
+              ticks: { color: '#ccc' }
+            },
+            x: {
+              ticks: { color: '#ccc' },
+              grid: { color: '#222' }
+            }
+          }
+        }
+      });
+    }
+
+    function plotAE(dataArray) {
+      const ctx = document.getElementById('aeChart').getContext('2d');
+      const labels = Array.from({ length: dataArray.length }, (_, i) => i - dataArray.length + 1);
+      if (aeChart) aeChart.destroy();
+      aeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Índice AE (nT)',
+            data: dataArray,
+            borderColor: '#ffcc00',
+            borderWidth: 2,
+            backgroundColor: 'rgba(255,204,0,0.1)',
+            tension: 0.3,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              suggestedMin: 0,
+              suggestedMax: 1000,
               grid: { color: '#444' },
               ticks: { color: '#ccc' }
             },
@@ -191,6 +242,7 @@
       updateDisplayText();
       updateStatusMessage();
       plotBz(simulatedData.bzGraph);
+      plotAE(simulatedData.ae);
     }
 
     window.onload = () => {
