@@ -143,7 +143,7 @@ async function fetchLiveData() {
         const plasmaData = await plasmaRes.json();
         const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
-        const kpRes = await fetch(base + 'noaa-estimated-planetary-k-index-1-minute.json');
+        const kpRes = await fetch(base + '');
         const kpData = await kpRes.json();
         const kp = parseFloat(kpData[kpData.length - 1][1]);
 
