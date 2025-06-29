@@ -1,254 +1,117 @@
 
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Aurora - Ao Vivo</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aurora Dashboard</title>
   <style>
     body {
+      margin: 0;
+      font-family: sans-serif;
       background-color: #000;
       color: #fff;
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #111;
-      color: #00ffcc;
-      padding: 1rem;
-      text-align: center;
-      position: relative;
-    }
-    #langToggle {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: #00ffcc;
-      border: none;
-      color: #000;
-      padding: 0.3rem 0.6rem;
-      border-radius: 5px;
-      cursor: pointer;
+      background-image: linear-gradient(to bottom, #000000aa, #000000dd),
+        url('https://apod.nasa.gov/apod/image/2202/AuroraPillars_Correia_4898.jpg');
+      background-size: cover;
+      background-position: center;
     }
     .container {
-      padding: 1rem;
+      max-width: 600px;
+      margin: auto;
+      padding: 2rem;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      margin-top: 3rem;
+      box-shadow: 0 0 10px #00ffcc;
+    }
+    h1 {
       display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
+      justify-content: space-between;
+      align-items: center;
     }
-    .box {
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      flex: 1 1 45%;
-      min-width: 300px;
-      box-shadow: 0 0 10px #00ffcc33;
+    button {
+      padding: 0.5rem 1rem;
+      background: #00ffcc;
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    h2 {
-      margin-top: 0;
-      color: #00ffcc;
-    }
-    canvas {
-      width: 100%;
-      height: 200px;
+    button:hover {
+      background: #00ddb3;
     }
     .metric {
+      margin: 1rem 0;
       font-size: 1.2rem;
-      margin-top: 0.5rem;
+    }
+    .error {
+      color: #f33;
     }
   </style>
 </head>
 <body>
-  <div style="background-color: #ff0; color: #000; text-align: center; padding: 10px; font-weight: bold;">
-    ✅ Este é o novo código. Se você está vendo esta mensagem, o cache foi limpo com sucesso.
-  </div>
-
-  <header>
-    <span id="title">Painel de Aurora</span>
-    <button id="langToggle" onclick="toggleLang()">EN / PT</button>
-  </header>
-
   <div class="container">
-    <div class="box">
-      <h2 id="liveTitle">Dados ao vivo</h2>
-      <div class="metric" id="bzText">Bz: carregando...</div>
-      <div class="metric" id="speedText">Vento Solar: carregando...</div>
-      <div class="metric" id="kpText">Índice Kp: carregando...</div>
-    </div>
-    <div class="box">
-      <h2 id="aeTitle">Índice AE simulado (últimas 6h)</h2>
-      <canvas id="aeChart"></canvas>
-    </div>
+    <h1>
+      <span id="title">Aurora Monitor</span>
+      <button id="langToggle" onclick="toggleLang()">EN / PT</button>
+    </h1>
+    <div class="metric" id="bzText">Bz: carregando...</div>
+    <div class="metric" id="speedText">Vento Solar: carregando...</div>
+    <div class="metric" id="kpText">Índice Kp: carregando...</div>
   </div>
 
   <script>
     let lang = 'pt';
-
-    const aeLabels = ['13:56', '13:57', '13:58', '13:59', '14:00', '14:01', '14:02', '14:03', '14:04', '14:05', '14:06', '14:07', '14:08', '14:09', '14:10', '14:11', '14:12', '14:13', '14:14', '14:15', '14:16', '14:17', '14:18', '14:19', '14:20', '14:21', '14:22', '14:23', '14:24', '14:25', '14:26', '14:27', '14:28', '14:29', '14:30', '14:31', '14:32', '14:33', '14:34', '14:35', '14:36', '14:37', '14:38', '14:39', '14:40', '14:41', '14:42', '14:43', '14:44', '14:45', '14:46', '14:47', '14:48', '14:49', '14:50', '14:51', '14:52', '14:53', '14:54', '14:55', '14:56', '14:57', '14:58', '14:59', '15:00', '15:01', '15:02', '15:03', '15:04', '15:05', '15:06', '15:07', '15:08', '15:09', '15:10', '15:11', '15:12', '15:13', '15:14', '15:15', '15:16', '15:17', '15:18', '15:19', '15:20', '15:21', '15:22', '15:23', '15:24', '15:25', '15:26', '15:27', '15:28', '15:29', '15:30', '15:31', '15:32', '15:33', '15:34', '15:35', '15:36', '15:37', '15:38', '15:39', '15:40', '15:41', '15:42', '15:43', '15:44', '15:45', '15:46', '15:47', '15:48', '15:49', '15:50', '15:51', '15:52', '15:53', '15:54', '15:55', '15:56', '15:57', '15:58', '15:59', '16:00', '16:01', '16:02', '16:03', '16:04', '16:05', '16:06', '16:07', '16:08', '16:09', '16:10', '16:11', '16:12', '16:13', '16:14', '16:15', '16:16', '16:17', '16:18', '16:19', '16:20', '16:21', '16:22', '16:23', '16:24', '16:25', '16:26', '16:27', '16:28', '16:29', '16:30', '16:31', '16:32', '16:33', '16:34', '16:35', '16:36', '16:37', '16:38', '16:39', '16:40', '16:41', '16:42', '16:43', '16:44', '16:45', '16:46', '16:47', '16:48', '16:49', '16:50', '16:51', '16:52', '16:53', '16:54', '16:55', '16:56', '16:57', '16:58', '16:59', '17:00', '17:01', '17:02', '17:03', '17:04', '17:05', '17:06', '17:07', '17:08', '17:09', '17:10', '17:11', '17:12', '17:13', '17:14', '17:15', '17:16', '17:17', '17:18', '17:19', '17:20', '17:21', '17:22', '17:23', '17:24', '17:25', '17:26', '17:27', '17:28', '17:29', '17:30', '17:31', '17:32', '17:33', '17:34', '17:35', '17:36', '17:37', '17:38', '17:39', '17:40', '17:41', '17:42', '17:43', '17:44', '17:45', '17:46', '17:47', '17:48', '17:49', '17:50', '17:51', '17:52', '17:53', '17:54', '17:55', '17:56', '17:57', '17:58', '17:59', '18:00', '18:01', '18:02', '18:03', '18:04', '18:05', '18:06', '18:07', '18:08', '18:09', '18:10', '18:11', '18:12', '18:13', '18:14', '18:15', '18:16', '18:17', '18:18', '18:19', '18:20', '18:21', '18:22', '18:23', '18:24', '18:25', '18:26', '18:27', '18:28', '18:29', '18:30', '18:31', '18:32', '18:33', '18:34', '18:35', '18:36', '18:37', '18:38', '18:39', '18:40', '18:41', '18:42', '18:43', '18:44', '18:45', '18:46', '18:47', '18:48', '18:49', '18:50', '18:51', '18:52', '18:53', '18:54', '18:55', '18:56', '18:57', '18:58', '18:59', '19:00', '19:01', '19:02', '19:03', '19:04', '19:05', '19:06', '19:07', '19:08', '19:09', '19:10', '19:11', '19:12', '19:13', '19:14', '19:15', '19:16', '19:17', '19:18', '19:19', '19:20', '19:21', '19:22', '19:23', '19:24', '19:25', '19:26', '19:27', '19:28', '19:29', '19:30', '19:31', '19:32', '19:33', '19:34', '19:35', '19:36', '19:37', '19:38', '19:39', '19:40', '19:41', '19:42', '19:43', '19:44', '19:45', '19:46', '19:47', '19:48', '19:49', '19:50', '19:51', '19:52', '19:53', '19:54', '19:55'];
-    const aeValues = [691, 657, 171, 132, 619, 209, 398, 619, 188, 295, 503, 350, 261, 646, 412, 540, 373, 231, 223, 346, 127, 111, 133, 121, 758, 442, 225, 182, 165, 271, 369, 631, 386, 639, 757, 774, 199, 119, 776, 310, 362, 472, 598, 542, 533, 281, 552, 208, 209, 302, 344, 730, 241, 337, 534, 640, 280, 470, 332, 339, 728, 511, 718, 570, 348, 293, 371, 537, 596, 665, 161, 157, 217, 384, 454, 515, 616, 265, 290, 515, 723, 280, 552, 407, 683, 775, 606, 216, 776, 210, 528, 739, 665, 259, 325, 561, 609, 242, 289, 321, 372, 262, 788, 576, 643, 783, 639, 356, 316, 561, 116, 125, 277, 208, 495, 762, 668, 371, 687, 313, 173, 595, 744, 368, 102, 270, 651, 579, 296, 421, 542, 220, 627, 680, 435, 376, 635, 235, 210, 377, 285, 771, 717, 379, 649, 145, 448, 152, 584, 499, 478, 693, 411, 303, 276, 394, 515, 653, 744, 644, 381, 713, 698, 560, 726, 644, 325, 753, 739, 557, 534, 402, 314, 226, 227, 316, 516, 420, 726, 455, 368, 594, 609, 681, 531, 296, 217, 790, 758, 635, 397, 676, 707, 249, 349, 120, 670, 694, 370, 636, 104, 638, 560, 800, 585, 717, 263, 381, 552, 480, 402, 739, 359, 220, 250, 734, 148, 353, 158, 284, 432, 277, 592, 108, 626, 479, 545, 394, 436, 613, 527, 704, 364, 585, 781, 362, 431, 401, 208, 462, 385, 517, 387, 142, 526, 413, 552, 796, 222, 778, 232, 353, 195, 211, 732, 196, 761, 654, 584, 128, 707, 360, 181, 135, 493, 602, 399, 567, 585, 174, 451, 526, 582, 304, 588, 509, 711, 125, 218, 215, 467, 389, 734, 609, 594, 717, 664, 558, 758, 371, 567, 611, 198, 687, 736, 537, 503, 695, 660, 432, 119, 299, 720, 505, 688, 706, 190, 738, 403, 720, 234, 780, 745, 661, 235, 552, 525, 381, 288, 666, 229, 302, 240, 440, 783, 388, 407, 154, 717, 494, 351, 164, 727, 176, 143, 527, 269, 523, 200, 515, 274, 543, 399, 154, 453, 734, 289, 202, 461, 356, 688, 547, 578, 644, 796, 229, 733, 558, 410, 345];
+    const base = 'https://proxy-noaa.russosec.workers.dev/?url=';
 
     function toggleLang() {
       lang = lang === 'pt' ? 'en' : 'pt';
-      document.getElementById('title').textContent = lang === 'pt' ? 'Painel de Aurora' : 'Aurora Dashboard';
-      document.getElementById('liveTitle').textContent = lang === 'pt' ? 'Dados ao vivo' : 'Live Data';
-      document.getElementById('aeTitle').textContent = lang === 'pt' ? 'Índice AE simulado (últimas 6h)' : 'Simulated AE Index (Last 6h)';
+      document.getElementById('langToggle').innerText = lang.toUpperCase();
+      renderLang();
     }
 
-    
+    function renderLang() {
+      document.getElementById('title').innerText = lang === 'pt' ? 'Monitor de Aurora' : 'Aurora Monitor';
+      fetchLiveData();
+    }
 
-async function fetchLiveData() {
-  // base already defined earlier
-
-  console.log("[DEBUG] Iniciando fetch de dados...");
-
-  try {
-    const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
-    console.log("[DEBUG] Bz URL:", magUrl);
-    
-    const magRes = await fetch(magUrl);
-    console.log("[DEBUG] Bz status:", magRes.status, "ok:", magRes.ok);
-    if (!magRes.ok) throw new Error("Erro no Bz fetch");
-    
-    console.log("[DEBUG] Bz status:", magRes.status);
-    const magData = await magRes.json();
-    console.log("[DEBUG] Bz data:", magData.slice(-1));
-    const bz = parseFloat(magData[magData.length - 1][6]);
-
-    const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
-    console.log("[DEBUG] Plasma URL:", plasmaUrl);
-    
-    const plasmaRes = await fetch(plasmaUrl);
-    console.log("[DEBUG] Plasma status:", plasmaRes.status, "ok:", plasmaRes.ok);
-    if (!plasmaRes.ok) throw new Error("Erro no Plasma fetch");
-    
-    console.log("[DEBUG] Plasma status:", plasmaRes.status);
-    const plasmaData = await plasmaRes.json();
-    console.log("[DEBUG] Plasma data:", plasmaData.slice(-1));
-    const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
-
-    const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
-    console.log("[DEBUG] Kp URL:", kpUrl);
-    
-    const kpRes = await fetch(kpUrl);
-    console.log("[DEBUG] Kp status:", kpRes.status, "ok:", kpRes.ok);
-    if (!kpRes.ok) throw new Error("Erro no Kp fetch");
-    
-    console.log("[DEBUG] Kp status:", kpRes.status);
-    const kpData = await kpRes.json();
-    console.log("[DEBUG] Kp data:", kpData.slice(-1));
-    const kp = parseFloat(kpData[kpData.length - 1][1]);
-
-    document.getElementById('bzText').textContent = lang === 'pt' ? `Bz: ${bz.toFixed(1)} nT` : `Bz: ${bz.toFixed(1)} nT`;
-    document.getElementById('speedText').textContent = lang === 'pt' ? `Vento Solar: ${speed.toFixed(0)} km/s` : `Solar Wind: ${speed.toFixed(0)} km/s`;
-    document.getElementById('kpText').textContent = lang === 'pt' ? `Índice Kp: ${kp}` : `Kp Index: ${kp}`;
-  } catch (e) {
-    console.error("[ERRO] Falha geral no fetch:", e);
-    document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
-    document.getElementById('speedText').textContent = '';
-    document.getElementById('kpText').textContent = '';
-  }
-
-  // base already defined earlier
-
-  console.log("[DEBUG] Iniciando fetch de dados...");
-
-  try {
-    const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
-    console.log("[DEBUG] Bz URL:", magUrl);
-    
-    const magRes = await fetch(magUrl);
-    console.log("[DEBUG] Bz status:", magRes.status, "ok:", magRes.ok);
-    if (!magRes.ok) throw new Error("Erro no Bz fetch");
-    
-    const magData = await magRes.json();
-    const bz = parseFloat(magData[magData.length - 1][6]);
-
-    const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
-    console.log("[DEBUG] Plasma URL:", plasmaUrl);
-    
-    const plasmaRes = await fetch(plasmaUrl);
-    console.log("[DEBUG] Plasma status:", plasmaRes.status, "ok:", plasmaRes.ok);
-    if (!plasmaRes.ok) throw new Error("Erro no Plasma fetch");
-    
-    const plasmaData = await plasmaRes.json();
-    const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
-
-    const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
-    console.log("[DEBUG] Kp URL:", kpUrl);
-    
-    const kpRes = await fetch(kpUrl);
-    console.log("[DEBUG] Kp status:", kpRes.status, "ok:", kpRes.ok);
-    if (!kpRes.ok) throw new Error("Erro no Kp fetch");
-    
-    const kpData = await kpRes.json();
-    const kp = parseFloat(kpData[kpData.length - 1][1]);
-
-    document.getElementById('bzText').textContent = lang === 'pt' ? `Bz: ${bz.toFixed(1)} nT` : `Bz: ${bz.toFixed(1)} nT`;
-    document.getElementById('speedText').textContent = lang === 'pt' ? `Vento Solar: ${speed.toFixed(0)} km/s` : `Solar Wind: ${speed.toFixed(0)} km/s`;
-    document.getElementById('kpText').textContent = lang === 'pt' ? `Índice Kp: ${kp}` : `Kp Index: ${kp}`;
-
-  } catch (e) {
-    console.error("[ERRO] Falha ao buscar dados:", e);
-    document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
-    document.getElementById('speedText').textContent = '';
-    document.getElementById('kpText').textContent = '';
-  }
-
+    async function fetchLiveData() {
+      console.log("[DEBUG] Iniciando fetch de dados...");
       try {
-        const base = 'https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/products/';
-
-        const magRes = await fetch(base + 'solar-wind/mag-1-day.json');
+        const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
+        console.log("[DEBUG] Bz URL:", magUrl);
+        const magRes = await fetch(magUrl);
         const magData = await magRes.json();
         const bz = parseFloat(magData[magData.length - 1][6]);
 
-        const plasmaRes = await fetch(base + 'solar-wind/plasma-1-day.json');
+        const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
+        console.log("[DEBUG] Plasma URL:", plasmaUrl);
+        const plasmaRes = await fetch(plasmaUrl);
         const plasmaData = await plasmaRes.json();
         const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
-        const kpRes = await fetch(base + '');
+        const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
+        console.log("[DEBUG] Kp URL:", kpUrl);
+        const kpRes = await fetch(kpUrl);
         const kpData = await kpRes.json();
         const kp = parseFloat(kpData[kpData.length - 1][1]);
 
-        document.getElementById('bzText').textContent = lang === 'pt' ? `Bz: ${bz.toFixed(1)} nT` : `Bz: ${bz.toFixed(1)} nT`;
-        document.getElementById('speedText').textContent = lang === 'pt' ? `Vento Solar: ${speed.toFixed(0)} km/s` : `Solar Wind: ${speed.toFixed(0)} km/s`;
-        document.getElementById('kpText').textContent = lang === 'pt' ? `Índice Kp: ${kp}` : `Kp Index: ${kp}`;
+        document.getElementById('bzText').textContent = (lang === 'pt' ? 'Bz: ' : 'Bz: ') + bz.toFixed(1) + ' nT';
+        document.getElementById('speedText').textContent = (lang === 'pt' ? 'Vento Solar: ' : 'Solar Wind: ') + Math.round(speed) + ' km/s';
+        document.getElementById('kpText').textContent = (lang === 'pt' ? 'Índice Kp: ' : 'Kp Index: ') + kp;
+
       } catch (e) {
-        document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
+        console.error("[ERRO] Falha ao carregar dados:", e);
+        document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+        document.getElementById('bzText').classList.add('error');
         document.getElementById('speedText').textContent = '';
         document.getElementById('kpText').textContent = '';
       }
     }
 
-    function plotAEChart() {
-      const ctx = document.getElementById('aeChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: aeLabels,
-          datasets: [{
-            label: 'AE (nT)',
-            data: aeValues,
-            borderColor: 'orange',
-            backgroundColor: 'rgba(255,165,0,0.2)',
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: true } },
-          scales: { y: { beginAtZero: false } }
-        }
-      });
-    }
-
-    window.onload = () => {
-      toggleLang();
-      fetchLiveData();
-      plotAEChart();
-    };
+    renderLang();
   </script>
 </body>
 </html>
