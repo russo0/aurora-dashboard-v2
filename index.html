@@ -106,7 +106,11 @@ async function fetchLiveData() {
   try {
     const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
     console.log("[DEBUG] Bz URL:", magUrl);
+    
     const magRes = await fetch(magUrl);
+    console.log("[DEBUG] Bz status:", magRes.status, "ok:", magRes.ok);
+    if (!magRes.ok) throw new Error("Erro no Bz fetch");
+    
     console.log("[DEBUG] Bz status:", magRes.status);
     const magData = await magRes.json();
     console.log("[DEBUG] Bz data:", magData.slice(-1));
@@ -114,7 +118,11 @@ async function fetchLiveData() {
 
     const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
     console.log("[DEBUG] Plasma URL:", plasmaUrl);
+    
     const plasmaRes = await fetch(plasmaUrl);
+    console.log("[DEBUG] Plasma status:", plasmaRes.status, "ok:", plasmaRes.ok);
+    if (!plasmaRes.ok) throw new Error("Erro no Plasma fetch");
+    
     console.log("[DEBUG] Plasma status:", plasmaRes.status);
     const plasmaData = await plasmaRes.json();
     console.log("[DEBUG] Plasma data:", plasmaData.slice(-1));
@@ -122,7 +130,11 @@ async function fetchLiveData() {
 
     const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
     console.log("[DEBUG] Kp URL:", kpUrl);
+    
     const kpRes = await fetch(kpUrl);
+    console.log("[DEBUG] Kp status:", kpRes.status, "ok:", kpRes.ok);
+    if (!kpRes.ok) throw new Error("Erro no Kp fetch");
+    
     console.log("[DEBUG] Kp status:", kpRes.status);
     const kpData = await kpRes.json();
     console.log("[DEBUG] Kp data:", kpData.slice(-1));
@@ -133,7 +145,7 @@ async function fetchLiveData() {
     document.getElementById('kpText').textContent = lang === 'pt' ? `Índice Kp: ${kp}` : `Kp Index: ${kp}`;
   } catch (e) {
     console.error("[ERRO] Falha geral no fetch:", e);
-    document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+    document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
     document.getElementById('speedText').textContent = '';
     document.getElementById('kpText').textContent = '';
   }
@@ -145,19 +157,31 @@ async function fetchLiveData() {
   try {
     const magUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
     console.log("[DEBUG] Bz URL:", magUrl);
+    
     const magRes = await fetch(magUrl);
+    console.log("[DEBUG] Bz status:", magRes.status, "ok:", magRes.ok);
+    if (!magRes.ok) throw new Error("Erro no Bz fetch");
+    
     const magData = await magRes.json();
     const bz = parseFloat(magData[magData.length - 1][6]);
 
     const plasmaUrl = base + 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
     console.log("[DEBUG] Plasma URL:", plasmaUrl);
+    
     const plasmaRes = await fetch(plasmaUrl);
+    console.log("[DEBUG] Plasma status:", plasmaRes.status, "ok:", plasmaRes.ok);
+    if (!plasmaRes.ok) throw new Error("Erro no Plasma fetch");
+    
     const plasmaData = await plasmaRes.json();
     const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
     const kpUrl = base + 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
     console.log("[DEBUG] Kp URL:", kpUrl);
+    
     const kpRes = await fetch(kpUrl);
+    console.log("[DEBUG] Kp status:", kpRes.status, "ok:", kpRes.ok);
+    if (!kpRes.ok) throw new Error("Erro no Kp fetch");
+    
     const kpData = await kpRes.json();
     const kp = parseFloat(kpData[kpData.length - 1][1]);
 
@@ -167,7 +191,7 @@ async function fetchLiveData() {
 
   } catch (e) {
     console.error("[ERRO] Falha ao buscar dados:", e);
-    document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+    document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
     document.getElementById('speedText').textContent = '';
     document.getElementById('kpText').textContent = '';
   }
@@ -191,7 +215,7 @@ async function fetchLiveData() {
         document.getElementById('speedText').textContent = lang === 'pt' ? `Vento Solar: ${speed.toFixed(0)} km/s` : `Solar Wind: ${speed.toFixed(0)} km/s`;
         document.getElementById('kpText').textContent = lang === 'pt' ? `Índice Kp: ${kp}` : `Kp Index: ${kp}`;
       } catch (e) {
-        document.getElementById('bzText').textContent = 'Erro ao carregar dados.';
+        document.getElementById('bzText').textContent = 'Erro ao carregar dados.'; document.getElementById('bzText').style.color = "#f00";
         document.getElementById('speedText').textContent = '';
         document.getElementById('kpText').textContent = '';
       }
