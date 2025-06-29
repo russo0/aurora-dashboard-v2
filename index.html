@@ -3,7 +3,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Dashboard</title>
+  <title>Aurora Dashboard Corrigido</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -63,7 +63,7 @@
     <div id="bzGraphContainer">
       <canvas id="bzChart" style="width:100%;max-width:600px;height:300px;"></canvas>
     </div>
-    <button onclick="fetchLiveData()">Atualizar Agora</button>
+    <button id="updateBtn" onclick="fetchLiveData()">Atualizar Agora</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,10 +104,7 @@
     function renderLang() {
       const t = translations[lang];
       document.getElementById("title").innerText = t.title;
-      document.querySelector("button").innerText = lang.toUpperCase() + " / " + (lang === "pt" ? "EN" : "PT");
-      document.querySelector("button + .metric + .metric + .metric + .metric + button").innerText = t.update;
-
-      // Atualiza os textos atuais com os dados já carregados
+      document.getElementById("updateBtn").innerText = t.update;
       updateDisplayText();
     }
 
@@ -126,14 +123,14 @@
 
     function updateDisplayText() {
       const t = translations[lang];
-      document.getElementById('bzText').textContent = `${t.bz}: ${latestData.bz.toFixed(1)} nT`;
+      document.getElementById('bzText').textContent = `${t.bz}: ${latestData.bz.toFixed(2)} nT`;
       document.getElementById('speedText').textContent = `${t.speed}: ${Math.round(latestData.speed)} km/s`;
       document.getElementById('kpText').textContent = `${t.kp}: ${latestData.kp}`;
     }
 
     function plotBz(dataArray) {
       const labels = dataArray.map(row => row[0].slice(11, 16));
-      const values = dataArray.map(row => parseFloat(row[6]));
+      const values = dataArray.map(row => parseFloat(row[3])); // Bz GSM
 
       if (bzChart) {
         bzChart.data.labels = labels;
@@ -146,7 +143,7 @@
           data: {
             labels,
             datasets: [{
-              label: 'Bz (nT)',
+              label: 'Bz GSM (nT)',
               data: values,
               borderColor: '#00ff00',
               backgroundColor: 'rgba(0, 255, 0, 0.1)',
@@ -161,8 +158,10 @@
                 suggestedMin: -10,
                 suggestedMax: 10,
                 grid: {
-                  color: '#333',
-                  borderDash: [4]
+                  color: '#444'
+                },
+                ticks: {
+                  color: '#ccc'
                 }
               },
               x: {
@@ -171,7 +170,23 @@
               }
             },
             plugins: {
-              legend: { labels: { color: '#ccc' } }
+              legend: {
+                labels: {
+                  color: '#ccc'
+                }
+              },
+              annotation: {
+                annotations: {
+                  line1: {
+                    type: 'line',
+                    yMin: 0,
+                    yMax: 0,
+                    borderColor: 'red',
+                    borderWidth: 2,
+                    borderDash: [6, 6]
+                  }
+                }
+              }
             }
           }
         });
@@ -182,7 +197,7 @@
       try {
         const mag = await fetch(base + 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json');
         const magData = await mag.json();
-        const bz = parseFloat(magData[magData.length - 1][6]);
+        const bz = parseFloat(magData[magData.length - 1][3]); // Bz GSM
         const bzLast6h = magData.slice(-72);
         plotBz(bzLast6h);
 
