@@ -1,5 +1,4 @@
 let lang = 'pt';
-let chart = null;
 
 function toggleLang() {
   lang = lang === 'pt' ? 'en' : 'pt';
@@ -9,8 +8,8 @@ function toggleLang() {
 function updateText() {
   document.getElementById('title').textContent = lang === 'pt' ? 'Monitor de Aurora' : 'Aurora Monitor';
   document.querySelector('button').textContent = lang === 'pt' ? 'Atualizar Agora' : 'Update Now';
-  updateDisplay();
   document.getElementById('bzLegend').textContent = lang === 'pt' ? 'Últimas 6 horas de Bz' : 'Last 6 hours of Bz';
+  updateDisplay();
 }
 
 async function fetchLiveData() {
@@ -25,9 +24,9 @@ async function fetchLiveData() {
     const plasmaData = await plasmaRes.json();
     const speed = parseFloat(plasmaData[plasmaData.length - 1][2]);
 
-    const kpRes = await fetch('https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/json/planetary_k_index_1m.json');
+    const kpRes = await fetch('https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
     const kpData = await kpRes.json();
-    const kp = parseFloat(kpData[kpData.length - 1].k_index);
+    const kp = parseFloat(kpData[kpData.length - 1][1]);
 
     window.bz = bzValues[bzValues.length - 1];
     window.speed = speed;
@@ -44,7 +43,7 @@ async function fetchLiveData() {
 function updateDisplay() {
   document.getElementById('bz').textContent = (lang === 'pt' ? 'IMF Bz: ' : 'IMF Bz: ') + window.bz.toFixed(1) + ' nT';
   document.getElementById('speed').textContent = (lang === 'pt' ? 'Vento Solar: ' : 'Solar Wind Speed: ') + Math.round(window.speed) + ' km/s';
-  document.getElementById('kp').textContent = (lang === 'pt' ? 'Índice Kp: ' : 'Kp Index: ') + window.kp;
+  document.getElementById('kp').textContent = (lang === 'pt' ? 'Índice Kp: ' : 'Kp Index: ') + window.kp.toFixed(1);
 
   if (window.bz < -2 && window.speed > 400 && window.kp >= 4) {
     document.getElementById('alert-status').textContent = lang === 'pt' ? 'Alerta: Subtempestade possível!' : 'Alert: Possible substorm!';
@@ -61,14 +60,31 @@ function drawBzChart() {
   const width = canvas.width;
   const height = canvas.height;
   const centerY = height / 2;
-
-  ctx.strokeStyle = "#0f0";
-  ctx.lineWidth = 2;
-
   const maxAbs = 10;
   const scaleY = centerY / maxAbs;
   const scaleX = width / window.bzHistory.length;
 
+  // Grade de fundo
+  ctx.strokeStyle = "#333";
+  for (let i = -10; i <= 10; i += 2) {
+    const y = centerY - i * scaleY;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+
+  // Linha zero
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, centerY);
+  ctx.lineTo(width, centerY);
+  ctx.stroke();
+
+  // Linha Bz
+  ctx.strokeStyle = "#00ff00";
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, centerY - window.bzHistory[0] * scaleY);
   for (let i = 1; i < window.bzHistory.length; i++) {
@@ -76,13 +92,6 @@ function drawBzChart() {
     const y = centerY - window.bzHistory[i] * scaleY;
     ctx.lineTo(x, y);
   }
-  ctx.stroke();
-
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, centerY);
-  ctx.lineTo(width, centerY);
   ctx.stroke();
 }
 
