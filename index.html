@@ -3,7 +3,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Dashboard + AE</title>
+  <title>Aurora Dashboard + AE Real</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -61,7 +61,6 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
 </head>
 <body>
   <div class="container">
@@ -81,16 +80,15 @@
     </div>
 
     <div class="column">
-      <h3 style="text-align:center;">Índice AE (simulado)</h3>
+      <h3 id="aeTitle" style="text-align:center;">Índice AE (Kyoto WDC)</h3>
       <canvas id="aeChart"></canvas>
     </div>
   </div>
 
   <script>
     let lang = 'pt';
-    let bzChart = null;
     let aeChart = null;
-    let latestData = { bz: 0, speed: 0, kp: 0 };
+    let latestData = { bz: -3.6, speed: 470, kp: 4.67 };
 
     const translations = {
       pt: {
@@ -101,7 +99,7 @@
         update: "Atualizar Agora",
         alert: "🌌 Alerta: Subtempestade possível!",
         normal: "Condições normais no momento.",
-        error: "Erro ao carregar dados."
+        ae: "Índice AE (Kyoto WDC)"
       },
       en: {
         title: "Aurora Monitor",
@@ -111,19 +109,8 @@
         update: "Update Now",
         alert: "🌌 Alert: Possible substorm!",
         normal: "Normal conditions at the moment.",
-        error: "Error fetching data."
+        ae: "AE Index (Kyoto WDC)"
       }
-    };
-
-    const simulatedData = {
-      bz: -3.5,
-      speed: 490,
-      kp: 5.0,
-      ae: Array.from({length: 72}, (_, i) => Math.round(300 + 150 * Math.sin(i / 6))),
-      bzGraph: Array.from({length: 72}, (_, i) => [
-        `2025-06-28 ${String(18 + Math.floor(i / 6)).padStart(2, '0')}:${(i % 6) * 10}`,
-        0, 0, (Math.sin(i / 10) * 5).toFixed(2)
-      ])
     };
 
     function toggleLang() {
@@ -132,70 +119,33 @@
       document.getElementById("title").innerText = t.title;
       document.getElementById("langBtn").innerText = lang === 'pt' ? 'EN / PT' : 'PT / EN';
       document.getElementById("updateBtn").innerText = t.update;
-      updateDisplayText();
+      document.getElementById("aeTitle").innerText = t.ae;
+      updateText();
     }
 
-    function updateDisplayText() {
+    function updateText() {
       const t = translations[lang];
       document.getElementById('bzText').textContent = `${t.bz}: ${latestData.bz.toFixed(2)} nT`;
       document.getElementById('speedText').textContent = `${t.speed}: ${Math.round(latestData.speed)} km/s`;
       document.getElementById('kpText').textContent = `${t.kp}: ${latestData.kp}`;
+      document.getElementById("statusMessage").innerText =
+        (latestData.bz < -2 && latestData.speed > 400 && latestData.kp >= 4)
+          ? t.alert
+          : t.normal;
     }
 
-    function updateStatusMessage() {
-      const { bz, speed, kp } = latestData;
-      const msg = (bz < -2 && speed > 400 && kp >= 4) ? translations[lang].alert : translations[lang].normal;
-      document.getElementById("statusMessage").innerText = msg;
-    }
-
-    function plotBz(dataArray) {
-      const labels = dataArray.map(row => row[0].slice(11, 16));
-      const values = dataArray.map(row => parseFloat(row[3]));
-      const ctx = document.getElementById('bzChart').getContext('2d');
-      if (bzChart) bzChart.destroy();
-      bzChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Bz GSM (nT)',
-            data: values,
-            borderColor: '#00ff00',
-            backgroundColor: 'rgba(0,255,0,0.1)',
-            borderWidth: 2,
-            tension: 0.3,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          plugins: {
-            annotation: {
-              annotations: {
-                zeroLine: {
-                  type: 'line',
-                  yMin: 0,
-                  yMax: 0,
-                  borderColor: 'red',
-                  borderWidth: 2,
-                  borderDash: [6, 6]
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              suggestedMin: -10,
-              suggestedMax: 10,
-              grid: { color: '#444' },
-              ticks: { color: '#ccc' }
-            },
-            x: {
-              ticks: { color: '#ccc' },
-              grid: { color: '#222' }
-            }
-          }
-        }
-      });
+    async function renderData() {
+      updateText();
+      try {
+        const url = "https://proxy-noaa.russosec.workers.dev/?url=https://wdc.kugi.kyoto-u.ac.jp/ae_realtime/ae24h.txt";
+        const response = await fetch(url);
+        const text = await response.text();
+        const lines = text.trim().split('\n').filter(l => l && !l.startsWith('#'));
+        const aeValues = lines.map(l => parseInt(l.split(/\s+/)[1])).slice(-72);
+        plotAE(aeValues);
+      } catch (e) {
+        console.error("Erro ao buscar AE:", e);
+      }
     }
 
     function plotAE(dataArray) {
@@ -207,7 +157,7 @@
         data: {
           labels,
           datasets: [{
-            label: 'Índice AE (nT)',
+            label: 'AE Index (nT)',
             data: dataArray,
             borderColor: '#ffcc00',
             borderWidth: 2,
@@ -220,7 +170,7 @@
           scales: {
             y: {
               suggestedMin: 0,
-              suggestedMax: 1000,
+              suggestedMax: 1200,
               grid: { color: '#444' },
               ticks: { color: '#ccc' }
             },
@@ -233,21 +183,8 @@
       });
     }
 
-    function renderData() {
-      latestData = {
-        bz: simulatedData.bz,
-        speed: simulatedData.speed,
-        kp: simulatedData.kp
-      };
-      updateDisplayText();
-      updateStatusMessage();
-      plotBz(simulatedData.bzGraph);
-      plotAE(simulatedData.ae);
-    }
-
     window.onload = () => {
-      toggleLang();
-      toggleLang();
+      toggleLang(); toggleLang();
       renderData();
     };
   </script>
