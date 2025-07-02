@@ -10,6 +10,7 @@ function updateText() {
   document.getElementById('title').textContent = lang === 'pt' ? 'Monitor de Aurora' : 'Aurora Monitor';
   document.querySelector('button').textContent = lang === 'pt' ? 'Atualizar Agora' : 'Update Now';
   updateDisplay();
+  document.getElementById('bzLegend').textContent = lang === 'pt' ? 'Últimas 6 horas de Bz' : 'Last 6 hours of Bz';
 }
 
 async function fetchLiveData() {
@@ -77,7 +78,8 @@ function drawBzChart() {
   }
   ctx.stroke();
 
-  ctx.strokeStyle = "#888";
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, centerY);
   ctx.lineTo(width, centerY);

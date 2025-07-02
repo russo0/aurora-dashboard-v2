@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF- />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Monitor de Aurora</title>
   <style>
@@ -17,7 +17,7 @@
     .overlay {
       background-color: rgba(0, 0, 0, 0.8);
       padding: 2rem;
-      max-width: 640px;
+      max-width: 680px;
       margin: auto;
       margin-top: 3rem;
       border-radius: 12px;
@@ -68,6 +68,12 @@
       border: 1px solid #00ffcc;
       border-radius: 8px;
     }
+    .legend {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #ccc;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -81,9 +87,9 @@
     <div class="metric" id="kp">Índice Kp: carregando...</div>
     <div class="status" id="alert-status">Status: verificando...</div>
     <button onclick="fetchLiveData()">Atualizar Agora</button>
-    <canvas id="bzChart" width="600" height="250"></canvas>
+    <canvas id="bzChart" width="640" height="250"></canvas>
+    <div class="legend" id="bzLegend">Últimas 6 horas de Bz</div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
