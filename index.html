@@ -1,250 +1,89 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Dashboard Completo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monitor de Aurora</title>
   <style>
     body {
       margin: 0;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background-color: #000;
       color: #fff;
       background-image: url('https://apod.nasa.gov/apod/image/2202/AuroraPillars_Correia_4898.jpg');
       background-size: cover;
       background-position: center;
     }
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.8);
       padding: 2rem;
-      background-color: rgba(0, 0, 0, 0.85);
-      margin: 2rem auto;
+      max-width: 640px;
+      margin: auto;
+      margin-top: 3rem;
       border-radius: 12px;
-      max-width: 1200px;
-      box-shadow: 0 0 10px #00ffcc;
-    }
-    .column {
-      flex: 1;
-      min-width: 320px;
-      margin: 1rem;
+      box-shadow: 0 0 15px #00ffcc;
     }
     h1 {
-      text-align: center;
-      width: 100%;
+      font-size: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    button {
-      padding: 0.5rem 1rem;
-      background: #00ffcc;
-      border: none;
-      border-radius: 5px;
-      color: #000;
+    .language-toggle {
+      font-size: 0.9rem;
       cursor: pointer;
-      margin-top: 1rem;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
     }
     .metric {
-      margin: 1rem 0;
       font-size: 1.2rem;
+      margin: 0.7rem 0;
     }
-    canvas {
-      width: 100% !important;
-      height: 300px !important;
-      background-color: #000;
-      border-radius: 10px;
-    }
-    #statusMessage {
+    .status {
       font-weight: bold;
       color: #00ffcc;
       margin-top: 1rem;
     }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background-color: #00e6b8;
+      transform: scale(1.05);
+    }
+    canvas {
+      margin-top: 2rem;
+      width: 100%;
+      background-color: #111;
+      border: 1px solid #00ffcc;
+      border-radius: 8px;
+    }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="overlay">
     <h1>
       <span id="title">Monitor de Aurora</span>
-      &nbsp;&nbsp;
-      <button onclick="toggleLang()" id="langBtn">EN / PT</button>
+      <button class="language-toggle" onclick="toggleLang()">EN / PT</button>
     </h1>
-
-    <div class="column">
-      <div class="metric" id="bzText">Bz: carregando...</div>
-      <div class="metric" id="speedText">Vento Solar: carregando...</div>
-      <div class="metric" id="kpText">Índice Kp: carregando...</div>
-      <div class="metric" id="statusMessage">Status: aguardando atualização...</div>
-      <canvas id="bzChart"></canvas>
-      <button id="updateBtn" onclick="renderData()">Atualizar Agora</button>
-    </div>
-
-    <div class="column">
-      <h3 id="aeTitle" style="text-align:center;">Índice AE (Kyoto WDC)</h3>
-      <canvas id="aeChart"></canvas>
-    </div>
+    <div class="metric" id="bz">IMF Bz: carregando...</div>
+    <div class="metric" id="speed">Vento Solar: carregando...</div>
+    <div class="metric" id="kp">Índice Kp: carregando...</div>
+    <div class="status" id="alert-status">Status: verificando...</div>
+    <button onclick="fetchLiveData()">Atualizar Agora</button>
+    <canvas id="bzChart" width="600" height="250"></canvas>
   </div>
 
-  <script>
-    let lang = 'pt';
-    let bzChart = null;
-    let aeChart = null;
-    let latestData = { bz: 0, speed: 0, kp: "-" };
-
-    const translations = {
-      pt: {
-        title: "Monitor de Aurora",
-        bz: "Bz",
-        speed: "Vento Solar",
-        kp: "Índice Kp",
-        update: "Atualizar Agora",
-        alert: "🌌 Alerta: Subtempestade possível!",
-        normal: "Condições normais no momento.",
-        ae: "Índice AE (Kyoto WDC)"
-      },
-      en: {
-        title: "Aurora Monitor",
-        bz: "Bz",
-        speed: "Solar Wind",
-        kp: "Kp Index",
-        update: "Update Now",
-        alert: "🌌 Alert: Possible substorm!",
-        normal: "Normal conditions at the moment.",
-        ae: "AE Index (Kyoto WDC)"
-      }
-    };
-
-    function toggleLang() {
-      lang = lang === 'pt' ? 'en' : 'pt';
-      const t = translations[lang];
-      document.getElementById("title").innerText = t.title;
-      document.getElementById("langBtn").innerText = lang === 'pt' ? 'EN / PT' : 'PT / EN';
-      document.getElementById("updateBtn").innerText = t.update;
-      document.getElementById("aeTitle").innerText = t.ae;
-      updateText();
-    }
-
-    function updateText() {
-      const t = translations[lang];
-      document.getElementById('bzText').textContent = `${t.bz}: ${latestData.bz} nT`;
-      document.getElementById('speedText').textContent = `${t.speed}: ${latestData.speed} km/s`;
-      document.getElementById('kpText').textContent = `${t.kp}: ${latestData.kp}`;
-      document.getElementById("statusMessage").innerText =
-        (latestData.bz < -2 && latestData.speed > 400 && latestData.kp >= 4)
-          ? t.alert
-          : t.normal;
-    }
-
-    async function renderData() {
-      try {
-        // Bz
-        const magURL = "https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json";
-        const magRes = await fetch(magURL);
-        const magData = await magRes.json();
-        const bzData = magData.slice(-72).map(row => parseFloat(row[3]));
-        latestData.bz = parseFloat(magData[magData.length - 1][3]).toFixed(2);
-        drawBzChart(bzData);
-
-        // Plasma
-        const plasmaURL = "https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json";
-        const plasmaRes = await fetch(plasmaURL);
-        const plasmaData = await plasmaRes.json();
-        latestData.speed = Math.round(parseFloat(plasmaData[plasmaData.length - 1][2]));
-
-        // Kp
-        const kpURL = "https://proxy-noaa.russosec.workers.dev/?url=https://services.swpc.noaa.gov/json/planetary_k_index_1m.json";
-        const kpRes = await fetch(kpURL);
-        const kpData = await kpRes.json();
-        latestData.kp = parseFloat(kpData[kpData.length - 1].kp_index).toFixed(1);
-
-        updateText();
-
-        // AE
-        const aeURL = "https://proxy-noaa.russosec.workers.dev/?url=https://wdc.kugi.kyoto-u.ac.jp/ae_realtime/ae24h.txt";
-        const aeRes = await fetch(aeURL);
-        const aeTxt = await aeRes.text();
-        const lines = aeTxt.trim().split("\n").filter(l => l && !l.startsWith("#"));
-        const aeValues = lines.map(l => parseInt(l.trim().split(/\s+/)[1])).slice(-72);
-        drawAEChart(aeValues);
-      } catch (e) {
-        console.error("Erro ao buscar dados:", e);
-        document.getElementById("statusMessage").innerText = lang === 'pt' ? 'Erro ao obter dados.' : 'Error fetching data.';
-      }
-    }
-
-    function drawBzChart(data) {
-      const ctx = document.getElementById('bzChart').getContext('2d');
-      const labels = Array.from({ length: data.length }, (_, i) => i - data.length + 1);
-      if (bzChart) bzChart.destroy();
-      bzChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'IMF Bz (nT)',
-            data,
-            borderColor: '#00ffcc',
-            borderWidth: 2,
-            backgroundColor: 'rgba(0,255,204,0.1)',
-            tension: 0.3,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              grid: { color: '#333' },
-              ticks: { color: '#ccc' },
-              beginAtZero: false
-            },
-            x: {
-              grid: { color: '#222' },
-              ticks: { display: false }
-            }
-          }
-        }
-      });
-    }
-
-    function drawAEChart(data) {
-      const ctx = document.getElementById('aeChart').getContext('2d');
-      const labels = Array.from({ length: data.length }, (_, i) => i - data.length + 1);
-      if (aeChart) aeChart.destroy();
-      aeChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'AE Index (nT)',
-            data,
-            borderColor: '#ffcc00',
-            borderWidth: 2,
-            backgroundColor: 'rgba(255,204,0,0.1)',
-            tension: 0.3,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              suggestedMin: 0,
-              suggestedMax: 1200,
-              grid: { color: '#444' },
-              ticks: { color: '#ccc' }
-            },
-            x: {
-              grid: { color: '#222' },
-              ticks: { color: '#ccc' }
-            }
-          }
-        }
-      });
-    }
-
-    window.onload = () => {
-      toggleLang(); toggleLang();
-      renderData();
-    };
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
