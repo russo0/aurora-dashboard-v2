@@ -1,1 +1,96 @@
-<!-- Placeholder for updated dashboard HTML -->
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monitor de Aurora</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #000;
+      color: #fff;
+      background-image: url('https://apod.nasa.gov/apod/image/2202/AuroraPillars_Correia_4898.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.85);
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+      margin-top: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #00ffcc;
+    }
+    h1 {
+      font-size: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .language-toggle {
+      font-size: 0.9rem;
+      cursor: pointer;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
+    }
+    .metric {
+      font-size: 1.2rem;
+      margin: 0.6rem 0;
+    }
+    .status {
+      font-weight: bold;
+      color: #00ffcc;
+      margin-top: 1rem;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background-color: #00e6b8;
+      transform: scale(1.05);
+    }
+    canvas {
+      margin-top: 2rem;
+      width: 100%;
+      height: 300px;
+      background-color: #000;
+      border: 1px solid #00ffcc;
+      border-radius: 8px;
+    }
+    .legend {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #ccc;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1>
+      <span id="title">Monitor de Aurora</span>
+      <button class="language-toggle" onclick="toggleLang()">EN / PT</button>
+    </h1>
+    <div class="metric" id="bz">IMF Bz: carregando...</div>
+    <div class="metric" id="speed">Vento Solar: carregando...</div>
+    <div class="metric" id="kp">Índice Kp: carregando...</div>
+    <div class="status" id="alert-status">Status: verificando...</div>
+    <button onclick="fetchLiveData()">Atualizar Agora</button>
+    <canvas id="bzChart" width="760" height="300"></canvas>
+    <div class="legend" id="bzLegend">Últimas 6 horas de Bz</div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
