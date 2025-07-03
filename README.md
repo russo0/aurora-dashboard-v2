@@ -1,23 +1,12 @@
-# Aurora Substorm Monitor
+# React + Vite
 
-Monitor minimalista e bilíngue (Português/Inglês) para acompanhar condições de subtempestades aurorais em tempo real.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Funcionalidades
+Currently, two official plugins are available:
 
-- Painel em tempo real com:
-  - Bz (IMF)
-  - Velocidade do Vento Solar
-  - Índice Kp
-- Alerta visual e sonoro quando Bz < -2 nT **e** vento solar > 400 km/s
-- Indicação clara de chance de subtempestade
-- Gráfico com as variações de Bz nas últimas 6 horas (linha zero destacada)
-- Suporte a troca de idioma (PT/EN)
-- Botão para alternar entre modo demonstrativo (mock) e dados reais (live)
-- Interface escura e minimalista, com visual inspirado em aurora
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Como rodar localmente
+## Expanding the ESLint configuration
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/SEU_USUARIO/aurora-substorm-monitor.git
-   cd aurora-substorm-monitor
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
